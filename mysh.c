@@ -2,20 +2,33 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
 
 
 /*
 Things to do:
-- Make our own string comparison function
 - Move the messages into its own file (.h) named smth like messages.h
-- Stop using stdio.h and string.h
 
 Known Bugs:
 
 */
 
+
+int my_strcmp(const char *str1, const char *str2){
+  while (*str1 && *str2) {
+    if (*str1 != *str2) {
+      /*If the characters are different return the difference*/
+      return *str1 - *str2;
+      
+    }
+
+    /*Increment to the next set of characters*/
+    str1++;
+    str2++;
+  }
+
+  /*If we reach this point in means there is no difference in the strings or one string is longer than the other so we compare one final time*/
+  return *str1 - *str2;
+}
 
 void clear_buffer(char *buffer, int size){
   for (int i = 0; i < size; i++){
@@ -36,8 +49,8 @@ int main(){
     string_buffer[bytes_read-1] = '\0'; /*the read funciton does not null terminate*/
  
     
-    while (strcmp(string_buffer, "exit") != 0){
-      if(strcmp(string_buffer, "exit") == 0)
+    while (my_strcmp(string_buffer, "exit") != 0){
+      if(my_strcmp(string_buffer, "exit") == 0)
 	write(1, error1, 17); /*Exits program*/
 
       else{
