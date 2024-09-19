@@ -5,6 +5,8 @@
 #define MAX_TOKENS 256
 
 
+char *tokenize(char *user_input);
+
 #endif
 
 

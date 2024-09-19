@@ -4,41 +4,24 @@
 #include <fcntl.h>
 #include "mysh.h"
 #include "lib.h"
-
+#include <stdio.h>
 
 /*
-Things to do:
-- Move the messages into its own file (.h) named smth like messages.h
-- Make a strlen function (determine string length)
-
-Known Bugs:
+  Things to do:
+  - Move the messages into its own file (.h) named smth like messages.h
+  - Make a strlen function (determine string length)
+  - NEED TO MAKE A strtok like funciton (I'm stuck on this - Brendan)
+  Known Bugs:
 
 */
 
 
-int numTokens;
+int numTokens = 0;
+int last_index = 0;
 
 
-int tokenize(char *tokens[], char *user_input){
-  int i = 0;
-  int temp_index = 0;
-  char temp_token[256];
-
-  while (my_strcmp(user_input, "\0") != 0){
-    temp_token[temp_index] = user_input[i];
-    temp_index++;
-    i++;
-
-
-    if (my_strcmp(user_input[i]," ") == 0){
-      i++;
-      temp_token[temp_index] = '\0';
-      tokens[numTokens] = temp_token;
-      clear_buffer(temp_token,temp_index+1);
-      temp_index = 0;
-      numTokens++;
-    }
-  }
+char *tokenize(char *user_input){
+  
 }
 
 
