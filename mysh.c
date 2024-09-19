@@ -11,6 +11,10 @@ Things to do:
 - Need to make a buffer clear function (set all values inside the buffer to null, using the bytes_read variable as a determining way of how much is needed
 - Make our own string comparison function
 - Move the messages into its own file (.h) named smth like messages.h
+
+Known Bugs:
+- Doesn't print out the prompt upon first boot for some reason
+- Since the buffer isn't being cleared after every read, if you type out for example hello and then type t on the next prompt, output is tello
 */
 
 int main(){
