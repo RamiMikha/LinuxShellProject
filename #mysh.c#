@@ -15,8 +15,7 @@ Known Bugs:
 
 */
 
-
-int numTokens;
+int numO
 
 
 int tokenize(char *tokens[], char *user_input){
