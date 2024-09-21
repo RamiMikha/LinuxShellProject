@@ -5,7 +5,7 @@
 #define MAX_TOKENS 256
 #define MAX_STRING_LEN 100
 
-void tokenize(char *user_input);
+int tokenize(char *user_input, char *tokens[MAX_TOKENS]);
 
 #endif
 

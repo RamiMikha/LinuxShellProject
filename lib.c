@@ -30,3 +30,31 @@ void clear_buffer(char *buffer, int size){
     buffer[i] = '\0';
   }
 }
+
+void my_strcpy(char *dest, char *src){
+  while (*src){
+    *dest++ = *src++;
+  }
+
+  *dest = '\0';
+}
+
+void *my_malloc(int size){
+  //get current break (end of heap)
+  void *current_brk = sbrk(0);
+
+  
+  if (sbrk(size) == (void *)-1){ //allocate size number of bytes of memory 
+    return NULL; ///retrun NULL if failed
+  }
+
+  return current_brk; //return pointer to newly allocated memory
+}
+
+int my_strlen(const char *str){
+  int length = 0;
+  while (str[length] != '\0'){
+    length++;
+  }
+  return length;
+}

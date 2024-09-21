@@ -24,54 +24,58 @@ int numTokens = 0;
 int input_index = 0;
 int buffer_index = 0;
 char *tokens[MAX_TOKENS];
-//static char buffer [MAX_TOKENS][MAX_STRING_LEN + 1];
 
 
-// I MADE THIS FOR A PREVIOUS ATTEMPT I HAD AT DOING THIS
-void write_to_screen(){
-  char *start = tokens;
-  int processed = 0;
-  input_index = 0;
-  while(processed < numTokens){
-    while(tokens[processed][input_index] != '\0'){
-      write(1, &tokens[processed][input_index], 1);
-      input_index++;
+int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
+  int numTokens = 0;
+  char *token_start = NULL; //pointer to the start of the token
+
+  for (int i = 0; user_input[i] != '\0'; i++){
+    if (user_input[i] != ' '){
+      if (token_start == NULL){
+	token_start = &user_input[i]; //if not white space and token_start is not currently poiting to a token start of a new token
+      }
+    }else {
+      //If we find white space and token_start is pointing to a token, end the token
+      if(token_start != NULL){
+	int token_length = &user_input[i] - token_start;
+	tokens[numTokens] = (char *)my_malloc(token_length + 1);
+	if(tokens[numTokens] == NULL) {
+	  return -1; //memory allocation failed
+	}
+	for (int j = 0; j < token_length; j++) {
+	  tokens[numTokens][j] = token_start[j]; //copy the token into the allocated memory
+	}
+	tokens[numTokens][token_length] = '\0'; //Null terminate the token
+	numTokens++;
+	token_start = NULL;
+      }
     }
-    processed++;
-    input_index = 0;
   }
-  return;
+
+  /*Handling the case if we reach the end of input without encountering a whitespace*/
+  if (token_start != NULL) {
+    int token_length = &user_input[my_strlen(user_input)] - token_start;
+    tokens[numTokens] = (char *)my_malloc(token_length + 1);
+    if (tokens[numTokens] == NULL){
+      return -1; //memory allocation failed
+    }
+    for (int j = 0; j < token_length; j++){
+      tokens[numTokens][j] = token_start[j];
+    }
+    tokens[numTokens][token_length] = '\0';
+    numTokens++;
+    
+  }
+
+  tokens[numTokens] = NULL;
+  return numTokens;
+  
+  
 }
 
 
 
-//DOES NOT TOKENIZE, INCOMPLETE
-void tokenize(char *user_input){
-  //static char buffer [MAX_TOKENS][MAX_STRING_LEN + 1];
-  char *start = tokens;
-  int continue_running = 1;
-  buffer_index = 0;
-  input_index = 0;
-  numTokens = 0;
-
-  printf("tokenize, before while loop\n");
-  while (continue_running){
-    if (user_input[input_index] != '\0'){
-      *start | user_input[input_index];
-      start++;
-      buffer_index++;
-      if (buffer_index >= MAX_TOKENS)
-	continue_running = 0;
-    }
-
-
-  }
-  return;
-}
-
-
-
-// DOES NOT TOKENIZE
 int main(){
     char string_buffer[256];
     char error1 [] = "Exiting Program\n";
@@ -92,9 +96,19 @@ int main(){
 	write(1, error1, 17); /*Exits program*/
 
       else{
-	write(1, string_buffer, 256);
+	numTokens = tokenize(string_buffer, tokens); //Tokenize the input
+
+	for (int i = 0; i < numTokens; i++){
+	  write (1, tokens[i], strlen(tokens[i]));
+	  write (1, " ", 1);
+	}
 	write(1, "\n", 1);
 
+	// Free memory for tokens
+	for (int i = 0; i < numTokens; i++){
+	  sbrk(-strlen(tokens[i]) - 1); 
+	}
+	
 	clear_buffer(string_buffer, 256); /*Clear the buffer*/
 	write(1, command_prompt, 2);
 	bytes_read = read(0,string_buffer,256);
