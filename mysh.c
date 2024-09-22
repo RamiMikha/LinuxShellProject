@@ -4,20 +4,11 @@
 #include <fcntl.h>
 #include "mysh.h"
 #include "lib.h"
-#include <stdio.h>
-#include <string.h>
-/*
-  Things to do:
-  - Move the messages into its own file (.h) named smth like messages.h
-  - Make a strlen function (determine string length)
-  - NEED TO MAKE A strtok like funciton (I'm stuck on this - Brendan)
-     = my thoughts: potentially, we could use bitwise and treat tokens like a buffer (inefficient)
-     = maybe we need a buffer that can store it temporarily, and have tokens point to address in that buffer
-        i attempted this, but it didn't work. I'm not quite sure why
+#include "messages.h"
+//#include <stdio.h>
+//#include <string.h>
 
-  Known Bugs:
-
-*/
+// Still need to make our own strlen function
 
 
 int numTokens = 0;
@@ -26,6 +17,13 @@ int buffer_index = 0;
 char *tokens[MAX_TOKENS];
 
 
+/*
+Function Name: tokenize
+Purpose: To split up a string into different segments that were separated by whitespace
+Details:
+ -- RAMI need to do this or explaint ome
+
+*/
 int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
   int numTokens = 0;
   char *token_start = NULL; //pointer to the start of the token
@@ -69,51 +67,55 @@ int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
   }
 
   tokens[numTokens] = NULL;
-  return numTokens;
-  
-  
+  return numTokens;  
 }
 
 
 
+
+/*
+Function Name: main
+Purpose: governs the running of the shell (mysh)
+Details: the function calls helper functions and makes system calls that process
+         and act based on the provided command line from the user
+*/
 int main(){
-    char string_buffer[256];
-    char error1 [] = "Exiting Program\n";
-    char command_prompt [] = "$ ";
+    char string_buffer[MAX_READ_LEN];
     int bytes_read;
     char *tokens[MAX_TOKENS+1];
 
 
     numTokens = 0;
-    clear_buffer(string_buffer, 256);
-    write(1, command_prompt, 2);
+    clear_buffer(string_buffer, MAX_READ_LEN);
+    write(1, command_prompt, PROMPT_LEN);
     
-    bytes_read = read(0,string_buffer, 256);
+    bytes_read = read(0,string_buffer, MAX_READ_LEN);
     string_buffer[bytes_read-1] = '\0'; /*the read funciton does not null terminate*/
  
     while (my_strcmp(string_buffer, "exit") != 0){
       if(my_strcmp(string_buffer, "exit") == 0)
-	write(1, error1, 17); /*Exits program*/
+	write(1, exit_prompt, EXIT_LEN); /*Exits program*/
 
       else{
 	numTokens = tokenize(string_buffer, tokens); //Tokenize the input
 
 	for (int i = 0; i < numTokens; i++){
-	  write (1, tokens[i], strlen(tokens[i]));
-	  write (1, " ", 1);
+	  write (1, tokens[i], my_strlen(tokens[i]));
+	  write (1, " ", SPACE_LEN);
 	}
 	write(1, "\n", 1);
 
 	// Free memory for tokens
 	for (int i = 0; i < numTokens; i++){
-	  sbrk(-strlen(tokens[i]) - 1); 
+	  sbrk(-my_strlen(tokens[i]) - 1); 
 	}
 	
-	clear_buffer(string_buffer, 256); /*Clear the buffer*/
-	write(1, command_prompt, 2);
-	bytes_read = read(0,string_buffer,256);
+	clear_buffer(string_buffer, MAX_READ_LEN); /*Clear the buffer*/
+	write(1, command_prompt, PROMPT_LEN);
+	bytes_read = read(0, string_buffer, MAX_READ_LEN);
 	string_buffer[bytes_read-1] = '\0';
       }
     }
+    write(1, exit_prompt, EXIT_LEN);
     return 0;
 }

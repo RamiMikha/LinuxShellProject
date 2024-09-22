@@ -7,6 +7,16 @@
 
 /*same == 0
 difference != 0*/
+
+/*
+Function Name: my_strcmp
+Purpose: compares the contents of two strings
+Details:
+      Input: str1 - the first string that is to be compared to of type char *
+             str2 - the second string that is to be compared to of type char *
+      Output: outputs the result of the comparison, where 0 means the strings are the same,
+              and any other value means that the strings are different
+*/
 int my_strcmp(const char *str1, const char *str2){
   while (*str1 && *str2) {
     if (*str1 != *str2) {
@@ -25,12 +35,31 @@ int my_strcmp(const char *str1, const char *str2){
 }
 
 
+
+/*
+Function Name: clear_buffer
+Purpose: clears the contents of a buffer (an array)
+Details:
+       Input: buffer - the array that is to have its contents cleared, of type char *
+              size - the fill amount of the buffer being provided, of type int
+       Output: clears all the contents of the buffer and makes the contents null
+*/
 void clear_buffer(char *buffer, int size){
   for (int i = 0; i < size; i++){
     buffer[i] = '\0';
   }
 }
 
+
+
+
+/*
+Function Name: my_strcpy
+Purpose: to make a copy of the original string
+Details:
+       Input: dest - where the original string is to be copied over to, of type char *
+              src - the original string that is to be copied, of type char *
+*/
 void my_strcpy(char *dest, char *src){
   while (*src){
     *dest++ = *src++;
@@ -39,6 +68,13 @@ void my_strcpy(char *dest, char *src){
   *dest = '\0';
 }
 
+
+/*
+Function Name: my_malloc
+Purpose: to allocate memory
+Details:
+       Input: size - the desired amount of bytes of memory that is to be allocated
+*/
 void *my_malloc(int size){
   //get current break (end of heap)
   void *current_brk = sbrk(0);
@@ -51,6 +87,14 @@ void *my_malloc(int size){
   return current_brk; //return pointer to newly allocated memory
 }
 
+
+
+/*
+Function Name: my_strlen
+Purpose: to determine the length of a given string
+Details:
+       Input: str - the string that is to be measured
+*/
 int my_strlen(const char *str){
   int length = 0;
   while (str[length] != '\0'){
