@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include "mysh.h"
 #include "lib.h"
@@ -8,13 +9,16 @@
 //#include <stdio.h>
 //#include <string.h>
 
-// Still need to make our own strlen function
 
 
-int numTokens = 0;
-int input_index = 0;
-int buffer_index = 0;
-char *tokens[MAX_TOKENS];
+/*
+Changes that Brendan wants/thinks we should do
+- Make a void function that does all the "run command" and "get command" stuff
+     so things like reading, tokenizing, etc would be get command,
+     and run command is the code that forks and runs all the pid, execve, and waitpid stuff
+- Marc suggested in the guidance that we use a data structure (struct) to store stuff like this, so potentially
+   we can do this by globalizing that struct and having a global variable of that struct type.
+*/
 
 
 /*
@@ -81,11 +85,11 @@ Details: the function calls helper functions and makes system calls that process
 */
 int main(){
     char string_buffer[MAX_READ_LEN];
-    int bytes_read;
+    int bytes_read, status;
     char *tokens[MAX_TOKENS+1];
+    pid_t pid;
+    int numTokens = 0;
 
-
-    numTokens = 0;
     clear_buffer(string_buffer, MAX_READ_LEN);
     write(1, command_prompt, PROMPT_LEN);
     
@@ -99,12 +103,16 @@ int main(){
       else{
 	numTokens = tokenize(string_buffer, tokens); //Tokenize the input
 
-	for (int i = 0; i < numTokens; i++){
-	  write (1, tokens[i], my_strlen(tokens[i]));
-	  write (1, " ", SPACE_LEN);
+	//Actually runs the command
+	pid = fork();
+	if (pid == IS_CHILD_PROC){
+	  execve(tokens[0], tokens, NULL);
 	}
-	write(1, "\n", 1);
 
+	else{
+	  waitpid(pid, &status, 0);
+	}
+	
 	// Free memory for tokens
 	for (int i = 0; i < numTokens; i++){
 	  sbrk(-my_strlen(tokens[i]) - 1); 
