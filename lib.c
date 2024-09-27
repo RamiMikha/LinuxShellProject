@@ -76,6 +76,11 @@ Details:
        Input: size - the desired amount of bytes of memory that is to be allocated
 */
 void *my_malloc(int size){
+
+  if (heap_start == NULL) {
+    heap_start = sbrk(0);
+  }
+  
   //get current break (end of heap)
   void *current_brk = sbrk(0);
 
@@ -85,6 +90,22 @@ void *my_malloc(int size){
   }
 
   return current_brk; //return pointer to newly allocated memory
+}
+
+
+/*
+Function Name: my_free
+Purpose: to free up allocated memory
+Details:
+       Input: original_brk - a pointer that has the address of the original program break
+*/
+
+void free_all() {
+  if (heap_start != NULL) {
+    //reset the program's break back to the initial break
+    brk(heap_start);
+  }
+
 }
 
 
@@ -102,3 +123,4 @@ int my_strlen(const char *str){
   }
   return length;
 }
+

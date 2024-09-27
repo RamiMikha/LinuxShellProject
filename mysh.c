@@ -114,9 +114,7 @@ int main(){
 	}
 	
 	// Free memory for tokens
-	for (int i = 0; i < numTokens; i++){
-	  sbrk(-my_strlen(tokens[i]) - 1); 
-	}
+	free_all();
 	
 	clear_buffer(string_buffer, MAX_READ_LEN); /*Clear the buffer*/
 	write(1, command_prompt, PROMPT_LEN);

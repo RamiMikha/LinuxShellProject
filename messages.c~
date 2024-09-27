@@ -1,5 +1,0 @@
-#include "messages.h"
-
-
-const char error1[] = "Exiting Program\n";
-const char command_prompt[] = "$ ";
