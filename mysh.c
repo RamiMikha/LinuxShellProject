@@ -6,6 +6,7 @@
 #include "mysh.h"
 #include "lib.h"
 #include "messages.h"
+
 //#include <stdio.h>
 //#include <string.h>
 
@@ -89,6 +90,7 @@ int main(){
     char *tokens[MAX_TOKENS+1];
     pid_t pid;
     int numTokens = 0;
+    int continue_flag = 1;
 
     clear_buffer(string_buffer, MAX_READ_LEN);
     write(1, command_prompt, PROMPT_LEN);
@@ -96,10 +98,10 @@ int main(){
     bytes_read = read(0,string_buffer, MAX_READ_LEN);
     string_buffer[bytes_read-1] = '\0'; /*the read funciton does not null terminate*/
  
-    while (my_strcmp(string_buffer, "exit") != 0){
-      if(my_strcmp(string_buffer, "exit") == 0)
-	write(1, exit_prompt, EXIT_LEN); /*Exits program*/
-
+    while (continue_flag){
+      if(my_strcmp(string_buffer, "exit") == 0){
+	continue_flag = 0;
+      }
       else{
 	numTokens = tokenize(string_buffer, tokens); //Tokenize the input
 
@@ -122,6 +124,7 @@ int main(){
 	string_buffer[bytes_read-1] = '\0';
       }
     }
+
     write(1, exit_prompt, EXIT_LEN);
     return 0;
 }
