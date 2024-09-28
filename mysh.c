@@ -1,3 +1,7 @@
+/*
+Project Members: Brendan Wong and Rami Mikha
+*/
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -11,15 +15,82 @@
 //#include <string.h>
 
 
+/*
+STILL NEEDED: details for the tokenize function RAMI
+*/
+
 
 /*
-Changes that Brendan wants/thinks we should do
-- Make a void function that does all the "run command" and "get command" stuff
-     so things like reading, tokenizing, etc would be get command,
-     and run command is the code that forks and runs all the pid, execve, and waitpid stuff
-- Marc suggested in the guidance that we use a data structure (struct) to store stuff like this, so potentially
-   we can do this by globalizing that struct and having a global variable of that struct type.
+Function Name: main
+Purpose: governs the running of the shell (mysh)
+Details: the function calls helper functions and makes system calls that process
+         and act based on the provided command line from the user
 */
+int main(){
+    Command command;
+    int continue_flag = 1;
+
+    get_command(&command);
+    while(continue_flag){
+      if ((command.numTokens == 1) && (my_strcmp(command.argv[0], "exit") == 0)){
+	continue_flag = 0;
+      }
+
+      else{
+	run_command(&command);
+	get_command(&command);
+      }
+    }    
+    write(1, exit_prompt, EXIT_LEN);
+    return 0;
+}
+
+
+
+
+/*
+Function Name: get_command
+Purpose: retrieves a command from the user
+Details: 
+       Input: command - the variable containing the command structure that is to be populated    
+*/
+void get_command(Command *command){
+  char string_buffer[MAX_READ_LEN];
+  free_all(); //clears contents of argv
+  
+  write(1, command_prompt, PROMPT_LEN);
+
+  command->bytes_read = read(0, string_buffer, MAX_READ_LEN);
+  string_buffer[command->bytes_read-1] = '\0';
+  command->numTokens = tokenize(string_buffer, command->argv);  
+
+  return;
+};
+
+
+
+/*
+Function Name: run_command
+Purpose: runs a given command from the user
+Details: 
+       Input: command - the variable containing the command that is to be run
+*/
+void run_command(Command *command){
+  int status;
+  pid_t pid;
+  pid = fork();
+
+  if (pid == IS_CHILD_PROC)
+    execve(command->argv[0], command->argv, NULL);
+
+  else{
+    waitpid(pid, &status, 0);
+  }
+  
+  return;
+};
+
+
 
 
 /*
@@ -75,56 +146,3 @@ int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
   return numTokens;  
 }
 
-
-
-
-/*
-Function Name: main
-Purpose: governs the running of the shell (mysh)
-Details: the function calls helper functions and makes system calls that process
-         and act based on the provided command line from the user
-*/
-int main(){
-    char string_buffer[MAX_READ_LEN];
-    int bytes_read, status;
-    char *tokens[MAX_TOKENS+1];
-    pid_t pid;
-    int numTokens = 0;
-    int continue_flag = 1;
-
-    clear_buffer(string_buffer, MAX_READ_LEN);
-    write(1, command_prompt, PROMPT_LEN);
-    
-    bytes_read = read(0,string_buffer, MAX_READ_LEN);
-    string_buffer[bytes_read-1] = '\0'; /*the read funciton does not null terminate*/
- 
-    while (continue_flag){
-      if(my_strcmp(string_buffer, "exit") == 0){
-	continue_flag = 0;
-      }
-      else{
-	numTokens = tokenize(string_buffer, tokens); //Tokenize the input
-
-	//Actually runs the command
-	pid = fork();
-	if (pid == IS_CHILD_PROC){
-	  execve(tokens[0], tokens, NULL);
-	}
-
-	else{
-	  waitpid(pid, &status, 0);
-	}
-	
-	// Free memory for tokens
-	free_all();
-	
-	clear_buffer(string_buffer, MAX_READ_LEN); /*Clear the buffer*/
-	write(1, command_prompt, PROMPT_LEN);
-	bytes_read = read(0, string_buffer, MAX_READ_LEN);
-	string_buffer[bytes_read-1] = '\0';
-      }
-    }
-
-    write(1, exit_prompt, EXIT_LEN);
-    return 0;
-}

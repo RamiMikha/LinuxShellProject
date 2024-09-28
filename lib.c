@@ -1,3 +1,7 @@
+/*
+Project Members: Brendan Wong and Rami Mikha
+*/
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -5,13 +9,13 @@
 #include "lib.h"
 
 
-/*same == 0
-difference != 0*/
-
 /*
 Function Name: my_strcmp
 Purpose: compares the contents of two strings
-Details:
+Details: The function returns a value of 0 if the strings are 0, and returns
+         any other integer value if they aren't.
+
+
       Input: str1 - the first string that is to be compared to of type char *
              str2 - the second string that is to be compared to of type char *
       Output: outputs the result of the comparison, where 0 means the strings are the same,
@@ -49,7 +53,6 @@ void clear_buffer(char *buffer, int size){
     buffer[i] = '\0';
   }
 }
-
 
 
 

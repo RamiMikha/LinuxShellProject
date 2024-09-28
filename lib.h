@@ -1,3 +1,7 @@
+/*
+Project Members: Brendan Wong and Rami Mikha
+*/
+
 #ifndef LIB_H
 #define LIB_H
 

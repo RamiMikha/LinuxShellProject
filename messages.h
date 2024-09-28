@@ -1,3 +1,7 @@
+/*
+Project Members: Brendan Wong and Rami Mikha
+*/
+
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
