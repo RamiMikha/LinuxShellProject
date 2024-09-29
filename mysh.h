@@ -21,7 +21,7 @@ typedef struct{
 
 int tokenize(char *user_input, char *tokens[MAX_TOKENS]);
 void get_command(Command *command);
-void run_command(Command *command);
+pid_t run_command(Command *command);
 
 
 #endif

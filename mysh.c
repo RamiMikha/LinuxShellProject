@@ -29,6 +29,7 @@ Details: the function calls helper functions and makes system calls that process
 int main(){
     Command command;
     int continue_flag = 1;
+    pid_t pid;
 
     get_command(&command);
     while(continue_flag){
@@ -37,7 +38,11 @@ int main(){
       }
 
       else{
-	run_command(&command);
+	pid = run_command(&command);
+	if (pid == IS_CHILD_PROC){
+	  write(1, invalid_command, INVALID_LEN);
+	  return 0;
+	}
 	get_command(&command);
       }
     }    
@@ -75,7 +80,7 @@ Purpose: runs a given command from the user
 Details: 
        Input: command - the variable containing the command that is to be run
 */
-void run_command(Command *command){
+pid_t run_command(Command *command){
   int status;
   pid_t pid;
   pid = fork();
@@ -87,7 +92,7 @@ void run_command(Command *command){
     waitpid(pid, &status, 0);
   }
   
-  return;
+  return pid;
 };
 
 
