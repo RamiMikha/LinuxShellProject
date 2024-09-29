@@ -14,12 +14,6 @@ Project Members: Brendan Wong and Rami Mikha
 //#include <stdio.h>
 //#include <string.h>
 
-
-/*
-STILL NEEDED: details for the tokenize function RAMI
-*/
-
-
 /*
 Function Name: main
 Purpose: governs the running of the shell (mysh)
@@ -39,6 +33,7 @@ int main(){
 
       else{
 	pid = run_command(&command);
+	//exits if child process did not change properly to new process
 	if (pid == IS_CHILD_PROC){
 	  write(1, invalid_command, INVALID_LEN);
 	  return 0;
@@ -79,6 +74,7 @@ Function Name: run_command
 Purpose: runs a given command from the user
 Details: 
        Input: command - the variable containing the command that is to be run
+       return: pid - returns the pid of the current process 
 */
 pid_t run_command(Command *command){
   int status;
@@ -102,7 +98,9 @@ pid_t run_command(Command *command){
 Function Name: tokenize
 Purpose: To split up a string into different segments that were separated by whitespace
 Details:
- -- RAMI need to do this or explaint ome
+       Input: *user_input - a buffer of characters taken from the user input
+              *tokens[] - an array of pointers to token arrays
+       return: numTokens - the number of tokens in the current from the user input      
 
 */
 int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
