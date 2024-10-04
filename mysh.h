@@ -13,6 +13,10 @@ Project Members: Brendan Wong and Rami Mikha
 #define MAX_PIPE_LEN 10
 #define TRUE 1
 #define FALSE 0
+#define WRITE 1
+#define READ 0
+#define STDOUT 1
+#define STDIN 0
 
 typedef struct{
   char *argv[MAX_TOKENS + 1];
@@ -35,6 +39,10 @@ void get_command(Command *command);
 void get_job(Job *job);
 pid_t run_command(Command *command);
 void run_job(Job *job);
+void handle_input_redirection(const char *infile_path);
+void handle_output_redirection(const char *outfile_path);
+void handle_pipes(Job *job);
+void handle_background_execution(int background);
 
 #endif
 

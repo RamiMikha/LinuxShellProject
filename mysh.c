@@ -199,14 +199,140 @@ void get_job(Job *job){
 
 /*
   Function Name: run_job
+  Purpose: to run job initialized by get_job()
+  Details: job - the variable containing the job structure to be run
 */
 void run_job(Job *job){
 
+  if(job->num_stages == 1) {
+    int status;
+    pid_t pid = fork(); //Fork a child proces
+    if (pid == IS_CHILD_PROC) {
+      //In child process
+
+      //Handling input and output redirection
+      handle_input_redirection(job->infile_path);
+      handle_output_redirection(job->outfile_path);
+      execve(job->pipelines[0].argv[0], job->pipelines[0].argv, NULL);
+    }
+    else{
+    //in parent process
+      if (job->background) {
+	handle_background_execution(job->background);
+      }
+      else {
+	//wait for child process to exit if foreground job
+	waitpid(pid, &status, 0);
+      }    
+    }
+  }
+  else{
+    handle_pipes(job);
+  }
 };
 
+/*
+  Function Name: handle_input_redirection
+  Purpose: to handle the input redirection at the start of the job
+  Details: infile_path - path to the input file
+*/
+void handle_input_redirection(const char *infile_path){
+  if (infile_path){
+    int fd = open(infile_path, O_RDONLY);
+
+    //redirect STDIN to input file
+    dup2(fd, STDIN);
+    close(fd);
+  }
+ }
 
 
+/*
+  Function Name: handle_OUtput_redirection
+  Purpose: to handle the input redirection at the end of the job
+  Details: infile_path - path to the output file
+*/
+void handle_output_redirection(const char *outfile_path) {
+  if(outfile_path){
+    int fd = open(outfile_path, O_WRONLY | O_CREAT | O_TRUNC);
 
+    //redirect STDOUT to output file
+    dup2(fd, STDOUT);
+    close(fd);
+  }
+}
+
+
+/*
+  Function Name: handle_pipes
+  Purpose: to handle execution if job has multiple commands with pipelines 
+  Details: job - the variable containing the job struct that is to be executed
+*/
+void handle_pipes(Job *job){
+  int status;
+  int pipefd[2];
+  int prev_fd = STDIN; //start with the standard input
+  
+  for (int i = 0; i < job->num_stages; i++) {
+    if (i < job->num_stages - 1 ){
+      //create a pipe if its not the last command
+      pipe(pipefd);
+    }
+
+    pid_t pid = fork();
+
+    if(pid == IS_CHILD_PROC) {
+      //In child process
+
+      if (i == 0) {
+	//Handling input redirection for the first command
+	handle_input_redirection(job->infile_path);
+      }else{
+	dup2(prev_fd, STDIN); //redirect STDIN to the previous stage
+	close(prev_fd);
+      }
+      
+      if (i == job->num_stages - 1){
+	//handling output redirection for last command
+	handle_output_redirection(job->outfile_path);
+      }
+      else{
+	dup2(pipefd[WRITE], STDOUT);
+      }
+
+      //close both pipe ends
+      close(pipefd[READ]);
+      close(pipefd[WRITE]);
+
+      execve(job->pipelines[i].argv[0], job->pipelines[i].argv, NULL);
+    }
+    else{
+      //in parent process
+      if (prev_fd != STDIN) {
+	close(prev_fd);
+      }
+      prev_fd = pipefd[READ]; //save the read enf of the pipe for the next command
+      close(pipefd[WRITE]); //close the write end in parent process
+      if (job->background) {
+        handle_background_execution(job->background);
+      }
+      else {
+        //wait for child process to exit if foreground job
+        waitpid(pid, &status, 0);
+      }      
+    }
+  }
+}
+
+/*
+  Function Name: handle_background_execution
+  Purpose: to handle the execution of command in the background
+  Details: background - a flag to know if job is to be run in the background
+*/
+void handle_background_execution(int background){
+  
+  
+}
 
 /*
   Function Name: tokenize
