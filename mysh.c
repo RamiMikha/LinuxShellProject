@@ -14,6 +14,54 @@ Project Members: Brendan Wong and Rami Mikha
 //#include <stdio.h>
 //#include <string.h>
 
+
+
+/*
+TO DO:
+- Input Redireciton
+- Pipeline support (for now, just up to 2)
+    - I know how to do this since the oode is similar to the lab, however, I want to figure out how to do it n amounts of time
+
+Some Notes Upon my own thinking - brendan
+- I'm not quite sure how to utilize the data strucutre JOBS to the fullest
+   - at the moment, I'm thinking that we might want to like, tokenize EVERYTHING, including the other command signs like |, < , > , & 
+     Since it's dynamically allocated already for us, all we have to do is to simply make the Command pipeline[] of the job structure
+     to be the splitting up of stuff if that makes sense. For example, we have usr/bin/ls -al | usr/bin/wc -1. In the first part,
+     we call tokenize so pipeline[0] will contain the entire command line tokenized. In a loop in main or something, we could check each token 
+     until we encounter one of the special ones. Once we do, we set it to 'null' , and we increment the index we use for pipeline[] to 1, where
+     we can make use of your strcpy on the rest of the line UP until it runs into another special symbol over and over again.
+  
+
+     I'm a bit cooked upon writing this, so for the life of me I have no idea how to do this but I know this works. Possible issues you might have
+     with this that I think aren't a worry:
+     - Memory leak COULD be an issue BUT i dont think it is. From how you explained to me how our mem allocate works, it's allocating from a very
+       specific space (top vs bot). As such, even if we lose the pointer to it, it should be fine since at the end, we are freeing memory anyways
+       (AKA, resetting the program break). I believe this makes it so we can unironically get away with losing memory temporarily as we end up
+       claiming it all back at the end anyways.
+
+     - I have no idea how to achieve what I'm talking about although I know it should be relatively simple but I cant for the life of me figure out
+       how at the time of writing this. In Simple Terms, I want parts of pipeline[0] to be null based on what the string is, however, not turned
+       into null until it's copied into pipeline[1] or pipeline[n] in general. This way, we have for example pipeline[0] containing the string for
+       usr/bin/ls -al, and pipeline[1] containing usr/bin/wc -1.
+
+
+- What I haven't figured out
+    - N amounts of pipeline support
+        - THe main issue with this in my head is how I want to implement the above. If we do the above, how do we keep track of what input/output redirection there is?
+	   The job structure itself only keeps track of one set of these between 2 different commands
+
+*/
+
+
+
+
+
+
+
+
+
+
+
 /*
 Function Name: main
 Purpose: governs the running of the shell (mysh)
