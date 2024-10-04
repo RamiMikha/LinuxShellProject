@@ -103,12 +103,12 @@ Details:
        Input: original_brk - a pointer that has the address of the original program break
 */
 
+
 void free_all() {
   if (heap_start != NULL) {
     //reset the program's break back to the initial break
     brk(heap_start);
   }
-
 }
 
 
