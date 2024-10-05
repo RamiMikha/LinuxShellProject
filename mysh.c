@@ -1,3 +1,4 @@
+
 /*
   Project Members: Brendan Wong and Rami Mikha
 */
@@ -11,45 +12,23 @@
 #include "lib.h"
 #include "messages.h"
 
-//#include <stdio.h>
-//#include <string.h>
+#include <stdio.h>
+#include <string.h>
 
 
 
 /*
-  TO DO:
-  - Input Redireciton
-  - Pipeline support (for now, just up to 2)
-  - I know how to do this since the oode is similar to the lab, however, I want to figure out how to do it n amounts of time
+  - What's working:
+  - the get_job function is partially functioning as intended
+      Currently, it's only capable of storing a single token in each pipeline
+      however, if inputting commands iwth single token like /usr/bin/ls | /usr/bin/wc | /usr/bin/wc it works for the pipeliens and on its own
 
-  Some Notes Upon my own thinking - brendan
-  - I'm not quite sure how to utilize the data strucutre JOBS to the fullest
-  - at the moment, I'm thinking that we might want to like, tokenize EVERYTHING, including the other command signs like |, < , > , & 
-  Since it's dynamically allocated already for us, all we have to do is to simply make the Command pipeline[] of the job structure
-  to be the splitting up of stuff if that makes sense. For example, we have usr/bin/ls -al | usr/bin/wc -1. In the first part,
-  we call tokenize so pipeline[0] will contain the entire command line tokenized. In a loop in main or something, we could check each token 
-  until we encounter one of the special ones. Once we do, we set it to 'null' , and we increment the index we use for pipeline[] to 1, where
-  we can make use of your strcpy on the rest of the line UP until it runs into another special symbol over and over again.
-  
+  - What isn't working:
+  - the run_job funtion is functioning as intended for PIPELINES only
+     - bizarre behaviour with the input and output redirection
+        tried the command /usr/bin/cat > mysh.c and it broke into a infinite loop?????
 
-  I'm a bit cooked upon writing this, so for the life of me I have no idea how to do this but I know this works. Possible issues you might have
-  with this that I think aren't a worry:
-  - Memory leak COULD be an issue BUT i dont think it is. From how you explained to me how our mem allocate works, it's allocating from a very
-  specific space (top vs bot). As such, even if we lose the pointer to it, it should be fine since at the end, we are freeing memory anyways
-  (AKA, resetting the program break). I believe this makes it so we can unironically get away with losing memory temporarily as we end up
-  claiming it all back at the end anyways.
-
-  - I have no idea how to achieve what I'm talking about although I know it should be relatively simple but I cant for the life of me figure out
-  how at the time of writing this. In Simple Terms, I want parts of pipeline[0] to be null based on what the string is, however, not turned
-  into null until it's copied into pipeline[1] or pipeline[n] in general. This way, we have for example pipeline[0] containing the string for
-  usr/bin/ls -al, and pipeline[1] containing usr/bin/wc -1.
-
-
-  - What I haven't figured out
-  - N amounts of pipeline support
-  - THe main issue with this in my head is how I want to implement the above. If we do the above, how do we keep track of what input/output redirection there is?
-  The job structure itself only keeps track of one set of these between 2 different commands
-
+  = typing exit doesn't exit the program
 */
 
 
@@ -71,28 +50,41 @@
 int main(){
 
   Job job;
-  Command command;
+  //Command command;
   int continue_flag = TRUE;
   pid_t pid;
 
 
-  //get_job(&job);
-  get_command(&command);
-  while(continue_flag){
-    if ((command.numTokens == 1) && (my_strcmp(command.argv[0], "exit") == 0)){
+  get_job(&job);
+
+  while (continue_flag){
+    if ((job.num_stages == 1) && (job.pipelines[0].numTokens == 1) && (my_strcmp(job.pipelines[0].argv[0], "exit") == 0)){ // this check doesn't work
       continue_flag = FALSE;
     }
 
     else{
-      pid = run_command(&command);
-      //exits if child process did not change properly to new process
-      if (pid == IS_CHILD_PROC){
-	write(1, invalid_command, INVALID_LEN);
-	return 0;
-      }
-      get_command(&command);
+      run_job(&job);
+      get_job(&job);
     }
-  }    
+  }
+  //  get_command(&command);
+
+  /*while(continue_flag){
+    if ((command.numTokens == 1) && (my_strcmp(command.argv[0], "exit") == 0)){
+    continue_flag = FALSE;
+    }
+
+    else{
+    pid = run_command(&command);
+    //exits if child process did not change properly to new process
+    if (pid == IS_CHILD_PROC){
+    write(1, invalid_command, INVALID_LEN);
+    return 0;
+    }
+    get_command(&command);
+    }
+    }  
+  */  
   write(1, exit_prompt, EXIT_LEN);
   return 0;
 }
@@ -144,6 +136,7 @@ pid_t run_command(Command *command){
 };
 
 
+
 /*
   Function Name: get_job
   Purpose: to initialize the job structure
@@ -162,37 +155,58 @@ void get_job(Job *job){
   
   get_command(job->original_cmd);
   job->num_stages++;
+
+  
+
   
   for (i = 0; i < job->original_cmd->numTokens; i++){
 
-    if (my_strcmp(job->original_cmd->argv[i], "|") != 0 || my_strcmp(job->original_cmd->argv[i], "<") != 0 ||
-	my_strcmp(job->original_cmd->argv[i], ">") != 0 || my_strcmp(job->original_cmd->argv[i], "&") != 0){
+    if (my_strcmp(job->original_cmd->argv[i], "|") != 0 && my_strcmp(job->original_cmd->argv[i], "<") != 0 &&
+	my_strcmp(job->original_cmd->argv[i], ">") != 0 && my_strcmp(job->original_cmd->argv[i], "&") != 0){
+
+      if (job->pipelines[job->num_stages-1].argv == NULL)
+	job->pipelines[job->num_stages-1].numTokens = 0;
+
+ 
       job->pipelines[job->num_stages-1].argv[job->pipelines[job->num_stages-1].numTokens] = job->original_cmd->argv[i]; //if an error occurs, might be here as the numTokens might not be initialized
+
+
+      printf("What was inputted into pipelines: %s", job->original_cmd->argv[i]);
+      printf("\n");
+      printf("The value in piplines: %s", job->pipelines[job->num_stages-1].argv[job->pipelines[job->num_stages-1].numTokens]);
+      printf("\n");
+      printf("numStages is: %i", job->num_stages);
+      printf("\n");
     }
 
     else{
       if (my_strcmp(job->original_cmd->argv[i], "|") == 0){
-      	  job->num_stages++;
+	job->num_stages+=1;
+	printf("numstages incremented: new value is: %i", job->num_stages);
+	printf("\n");
       }
-
       else{
 	if(my_strcmp(job->original_cmd->argv[i], "<") == 0){
 	  job->infile_path = job->original_cmd->argv[i+1];
-	  i++; //should be +2, but this will run and then the for loop will increment again
+	  printf("infile created: value is: %s",job->original_cmd->argv[i]);
+	  printf("\n");
 	}
 
 	else if(my_strcmp(job->original_cmd->argv[i], ">") == 0){
 	  job->outfile_path = job->original_cmd->argv[i+1];
-	  i++;
+	  printf("outfile_path created: value is: %s", job->original_cmd->argv[i]);
+	  printf("\n");
 	}
 
 	else if (my_strcmp(job->original_cmd->argv[i], "&") == 0){
 	  job->background = TRUE;
+	  printf("it is a background process\n");
 	}
       }
     }
   }
-
+  
+  printf("EXITED GET_JOB\n\n\n\n");
   return;
 };
 
@@ -204,29 +218,49 @@ void get_job(Job *job){
 */
 void run_job(Job *job){
 
+  printf("entered run_job\n");
+
+  
   if(job->num_stages == 1) {
+
     int status;
     pid_t pid = fork(); //Fork a child proces
     if (pid == IS_CHILD_PROC) {
-      //In child process
 
+      //In child process
+      printf("is a child process\n");
+      
       //Handling input and output redirection
+      printf("input_redirect function entered\n");
       handle_input_redirection(job->infile_path);
+
+      printf("output_redirect function entered\n");
       handle_output_redirection(job->outfile_path);
+
+      printf("execve entered\n");
+      printf("the arguments being entered in order: ");
+      printf(" %s", job->pipelines[0].argv[0]);
+      printf(" %s", job->pipelines[0].argv);
+      printf("\n");
+      
       execve(job->pipelines[0].argv[0], job->pipelines[0].argv, NULL);
     }
     else{
-    //in parent process
+      printf("is a parent process\n");
+      //in parent process
       if (job->background) {
+	printf("is a background execution job\n");
 	handle_background_execution(job->background);
       }
       else {
 	//wait for child process to exit if foreground job
+	printf("waitpid entered\n");
 	waitpid(pid, &status, 0);
       }    
     }
   }
   else{
+    printf("handle_pipes function entering\n");
     handle_pipes(job);
   }
 };
@@ -237,14 +271,15 @@ void run_job(Job *job){
   Details: infile_path - path to the input file
 */
 void handle_input_redirection(const char *infile_path){
-  if (infile_path){
+  if (infile_path != NULL){
+    printf("input redirecting occurring \n");
     int fd = open(infile_path, O_RDONLY);
 
     //redirect STDIN to input file
     dup2(fd, STDIN);
     close(fd);
   }
- }
+}
 
 
 /*
@@ -253,9 +288,12 @@ void handle_input_redirection(const char *infile_path){
   Details: infile_path - path to the output file
 */
 void handle_output_redirection(const char *outfile_path) {
-  if(outfile_path){
+  if(outfile_path != NULL){
+
+    printf("output redirect occurring \n");
     int fd = open(outfile_path, O_WRONLY | O_CREAT | O_TRUNC);
 
+    
     //redirect STDOUT to output file
     dup2(fd, STDOUT);
     close(fd);
@@ -272,7 +310,8 @@ void handle_pipes(Job *job){
   int status;
   int pipefd[2];
   int prev_fd = STDIN; //start with the standard input
-  
+
+  printf("entering pipe creation\n");
   for (int i = 0; i < job->num_stages; i++) {
     if (i < job->num_stages - 1 ){
       //create a pipe if its not the last command
@@ -281,6 +320,8 @@ void handle_pipes(Job *job){
 
     pid_t pid = fork();
 
+
+    
     if(pid == IS_CHILD_PROC) {
       //In child process
 
@@ -330,8 +371,7 @@ void handle_pipes(Job *job){
   Details: background - a flag to know if job is to be run in the background
 */
 void handle_background_execution(int background){
-  
-  
+  return;
 }
 
 /*
