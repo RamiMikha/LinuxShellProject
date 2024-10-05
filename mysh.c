@@ -19,10 +19,8 @@
 
 /*
   - What's working:
-  - the get_job function is partially functioning as intended
-      Currently, it's only capable of storing a single token in each pipeline
-      however, if inputting commands iwth single token like /usr/bin/ls | /usr/bin/wc | /usr/bin/wc it works for the pipeliens and on its own
-
+  - the get_job function is funcitoning mostly perfectly
+       Kind of does what it needs to
   - What isn't working:
   - the run_job funtion is functioning as intended for PIPELINES only
      - bizarre behaviour with the input and output redirection
@@ -145,13 +143,17 @@ pid_t run_command(Command *command){
 */
 void get_job(Job *job){
   int i = 0;
-  int j;
+  int j = 0;
   //reset contents of get_job
   free_all();
   job->num_stages = 0;
   job->outfile_path = NULL;
   job->infile_path = NULL;
   job->background = 0;
+
+  for (i = 0; i < MAX_PIPE_LEN; i++){
+    job->pipelines[i].numTokens = 0;
+  }
   
   get_command(job->original_cmd);
   job->num_stages++;
@@ -169,7 +171,7 @@ void get_job(Job *job){
 
  
       job->pipelines[job->num_stages-1].argv[job->pipelines[job->num_stages-1].numTokens] = job->original_cmd->argv[i]; //if an error occurs, might be here as the numTokens might not be initialized
-
+      job->pipelines[job->num_stages-1].numTokens++;
 
       printf("What was inputted into pipelines: %s", job->original_cmd->argv[i]);
       printf("\n");
