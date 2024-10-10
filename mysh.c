@@ -18,22 +18,10 @@
 
 
 /*
-  - What's working:
-  - the get_job function is funcitoning mostly perfectly
-       Kind of does what it needs to
-  - What isn't working:
-  - the run_job funtion is functioning as intended for PIPELINES only
-     - bizarre behaviour with the input and output redirection
-        tried the command /usr/bin/cat > mysh.c and it broke into a infinite loop?????
-
-  = typing exit doesn't exit the program
+  background processes seems to be working but for some reason the command prompt does not get written after a background job
+  
+  
 */
-
-
-
-
-
-
 
 
 
@@ -52,6 +40,13 @@ int main(){
   int continue_flag = TRUE;
   pid_t pid;
 
+  //dont fully get but i think its working to clean up zombie children
+  struct sigaction sa;
+  sa.sa_handler = &handle_zmbchld; //Set the signal handler function
+  sigemptyset(&sa.sa_mask); //stops other handle_zmbchld calls from happening during it is being handles
+  sa.sa_flags = SA_RESTART; // tells the OS to restart systems calls in case they get interrupted by nalde_zmbchld
+  sigaction(SIGCHLD, &sa, NULL);//this actually installs the function so the OS knows to call it when a child is terminated
+
 
   get_job(&job);
 
@@ -61,7 +56,10 @@ int main(){
     }
 
     else{
-      run_job(&job);
+      pid = run_job(&job);
+      if (pid == IS_CHILD_PROC){
+	return 0;
+      }
       get_job(&job);
     }
   }
@@ -88,7 +86,11 @@ int main(){
 }
 
 
+void handle_zmbchld(int sig){
+  int status;
 
+  waitpid(-1,&status, WNOHANG);
+}
 
 /*
   Function Name: get_command
@@ -99,7 +101,7 @@ int main(){
 void get_command(Command *command){
   char string_buffer[MAX_READ_LEN];
   free_all(); //clears contents of argv
-  
+
   write(1, command_prompt, PROMPT_LEN);
 
   command->bytes_read = read(0, string_buffer, MAX_READ_LEN);
@@ -218,15 +220,16 @@ void get_job(Job *job){
   Purpose: to run job initialized by get_job()
   Details: job - the variable containing the job structure to be run
 */
-void run_job(Job *job){
+pid_t run_job(Job *job){
 
+  pid_t pid;
   printf("entered run_job\n");
-
+  
   
   if(job->num_stages == 1) {
 
     int status;
-    pid_t pid = fork(); //Fork a child proces
+    pid = fork(); //Fork a child proces
     if (pid == IS_CHILD_PROC) {
 
       //In child process
@@ -252,7 +255,9 @@ void run_job(Job *job){
       //in parent process
       if (job->background) {
 	printf("is a background execution job\n");
-	handle_background_execution(job->background);
+	waitpid(pid, &status, WNOHANG);
+	//return;
+	//handle_background_execution(job->background);
       }
       else {
 	//wait for child process to exit if foreground job
@@ -263,8 +268,9 @@ void run_job(Job *job){
   }
   else{
     printf("handle_pipes function entering\n");
-    handle_pipes(job);
+    pid = handle_pipes(job);
   }
+  return pid;
 };
 
 /*
@@ -308,11 +314,11 @@ void handle_output_redirection(const char *outfile_path) {
   Purpose: to handle execution if job has multiple commands with pipelines 
   Details: job - the variable containing the job struct that is to be executed
 */
-void handle_pipes(Job *job){
+pid_t handle_pipes(Job *job){
   int status;
   int pipefd[2];
   int prev_fd = STDIN; //start with the standard input
-
+  pid_t pid;
   printf("entering pipe creation\n");
   for (int i = 0; i < job->num_stages; i++) {
     if (i < job->num_stages - 1 ){
@@ -320,7 +326,7 @@ void handle_pipes(Job *job){
       pipe(pipefd);
     }
 
-    pid_t pid = fork();
+    pid = fork();
 
 
     
@@ -357,7 +363,8 @@ void handle_pipes(Job *job){
       prev_fd = pipefd[READ]; //save the read enf of the pipe for the next command
       close(pipefd[WRITE]); //close the write end in parent process
       if (job->background) {
-        handle_background_execution(job->background);
+	waitpid(pid, &status, WNOHANG);
+        //handle_background_execution(job->background);
       }
       else {
         //wait for child process to exit if foreground job
@@ -365,6 +372,7 @@ void handle_pipes(Job *job){
       }      
     }
   }
+  return pid;
 }
 
 /*

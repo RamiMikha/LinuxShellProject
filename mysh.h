@@ -38,12 +38,12 @@ int tokenize(char *user_input, char *tokens[MAX_TOKENS]);
 void get_command(Command *command);
 void get_job(Job *job);
 pid_t run_command(Command *command);
-void run_job(Job *job);
+pid_t run_job(Job *job);
 void handle_input_redirection(const char *infile_path);
 void handle_output_redirection(const char *outfile_path);
-void handle_pipes(Job *job);
+pid_t handle_pipes(Job *job);
 void handle_background_execution(int background);
-
+void handle_zmbchld(int sig);
 #endif
 
 
