@@ -168,10 +168,10 @@ void get_job(Job *job){
     if (my_strcmp(job->original_cmd->argv[i], "|") != 0 && my_strcmp(job->original_cmd->argv[i], "<") != 0 &&
 	my_strcmp(job->original_cmd->argv[i], ">") != 0 && my_strcmp(job->original_cmd->argv[i], "&") != 0){
 
+      
       if (job->pipelines[job->num_stages-1].argv == NULL)
 	job->pipelines[job->num_stages-1].numTokens = 0;
 
- 
       job->pipelines[job->num_stages-1].argv[job->pipelines[job->num_stages-1].numTokens] = job->original_cmd->argv[i]; //if an error occurs, might be here as the numTokens might not be initialized
       job->pipelines[job->num_stages-1].numTokens++;
 
@@ -192,12 +192,15 @@ void get_job(Job *job){
       else{
 	if(my_strcmp(job->original_cmd->argv[i], "<") == 0){
 	  job->infile_path = job->original_cmd->argv[i+1];
+	  i++;
 	  printf("infile created: value is: %s",job->original_cmd->argv[i]);
 	  printf("\n");
 	}
 
 	else if(my_strcmp(job->original_cmd->argv[i], ">") == 0){
 	  job->outfile_path = job->original_cmd->argv[i+1];
+	  i++;
+
 	  printf("outfile_path created: value is: %s", job->original_cmd->argv[i]);
 	  printf("\n");
 	}
