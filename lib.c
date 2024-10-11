@@ -21,23 +21,25 @@ Details: The function returns a value of 0 if the strings are 0, and returns
       Output: outputs the result of the comparison, where 0 means the strings are the same,
               and any other value means that the strings are different
 */
+
+/*
 int my_strcmp(const char *str1, const char *str2){
   while (*str1 && *str2) {
     if (*str1 != *str2) {
       /*If the characters are different return the difference*/
-      return *str1 - *str2;
+/*    return *str1 - *str2;
 
     }
 
     /*Increment to the next set of characters*/
-    str1++;
+/*  str1++;
     str2++;
   }
 
   /*If we reach this point in means there is no difference in the strings or one string is longer than the other so we compare one final time*/
-  return *str1 - *str2;
+/*return *str1 - *str2;
 }
-
+*/
 
 
 /*
@@ -63,6 +65,7 @@ Details:
        Input: dest - where the original string is to be copied over to, of type char *
               src - the original string that is to be copied, of type char *
 */
+/*
 void my_strcpy(char *dest, char *src){
   while (*src){
     *dest++ = *src++;
@@ -70,7 +73,7 @@ void my_strcpy(char *dest, char *src){
 
   *dest = '\0';
 }
-
+*/
 
 /*
 Function Name: my_malloc
@@ -119,6 +122,7 @@ Purpose: to determine the length of a given string
 Details:
        Input: str - the string that is to be measured
 */
+/*
 int my_strlen(const char *str){
   int length = 0;
   while (str[length] != '\0'){
@@ -126,4 +130,4 @@ int my_strlen(const char *str){
   }
   return length;
 }
-
+*/

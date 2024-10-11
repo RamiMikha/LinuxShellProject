@@ -1,0 +1,15 @@
+#ifndef MY_STRINGS_H
+#define MY_STRINGS_H
+
+#define MAX_TOKENS 256
+
+
+
+int tokenize(char *user_input, char *tokens[MAX_TOKENS]);
+int my_strcmp(const char *str1, const char *str2);
+void my_strcpy(char *dest, char *src);
+int my_strlen(const char *str);
+
+
+
+#endif

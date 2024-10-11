@@ -34,7 +34,7 @@ typedef struct{
 }Job;
 
 
-int tokenize(char *user_input, char *tokens[MAX_TOKENS]);
+//int tokenize(char *user_input, char *tokens[MAX_TOKENS]);
 void get_command(Command *command);
 void get_job(Job *job);
 pid_t run_command(Command *command);

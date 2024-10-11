@@ -11,7 +11,7 @@
 #include "mysh.h"
 #include "lib.h"
 #include "messages.h"
-
+#include "my_strings.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -384,6 +384,10 @@ void handle_background_execution(int background){
   return;
 }
 
+
+
+
+
 /*
   Function Name: tokenize
   Purpose: To split up a string into different segments that were separated by whitespace
@@ -393,6 +397,8 @@ void handle_background_execution(int background){
   return: numTokens - the number of tokens in the current from the user input      
 
 */
+
+/*
 int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
   int numTokens = 0;
   char *token_start = NULL; //pointer to the start of the token
@@ -421,7 +427,8 @@ int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
   }
 
   /*Handling the case if we reach the end of input without encountering a whitespace*/
-  if (token_start != NULL) {
+/*
+if (token_start != NULL) {
     int token_length = &user_input[my_strlen(user_input)] - token_start;
     tokens[numTokens] = (char *)my_malloc(token_length + 1);
     if (tokens[numTokens] == NULL){
@@ -438,4 +445,4 @@ int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
   tokens[numTokens] = NULL;
   return numTokens;  
 }
-
+*/
