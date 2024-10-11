@@ -156,6 +156,14 @@ void get_job(Job *job){
   for (i = 0; i < MAX_PIPE_LEN; i++){
     job->pipelines[i].numTokens = 0;
   }
+
+
+  for (i = 0; i < MAX_PIPE_LEN; i++){
+    for(j = 0; j <  MAX_TOKENS+1; j++){
+      job->pipelines[i].argv[j] = NULL;
+    }
+  }
+
   
   get_command(job->original_cmd);
   job->num_stages++;
@@ -177,7 +185,7 @@ void get_job(Job *job){
 
       printf("What was inputted into pipelines: %s", job->original_cmd->argv[i]);
       printf("\n");
-      printf("The value in piplines: %s", job->pipelines[job->num_stages-1].argv[job->pipelines[job->num_stages-1].numTokens]);
+      printf("The value in piplines: %s", job->pipelines[job->num_stages-1].argv[job->pipelines[job->num_stages-1].numTokens-1]);
       printf("\n");
       printf("numStages is: %i", job->num_stages);
       printf("\n");
