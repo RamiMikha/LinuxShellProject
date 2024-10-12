@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-
+#include <stdlib.h>
 
 /*
   background processes seems to be working but for some reason the command prompt does not get written after a background job
@@ -23,23 +23,26 @@
   
 */
 
-
-
-
-
+char * path;
+char * find_path(char *envp[]);
+void build_path(char *path, char *command);
+void adjust_job(Job *job);
 /*
   Function Name: main
   Purpose: governs the running of the shell (mysh)
   Details: the function calls helper functions and makes system calls that process
   and act based on the provided command line from the user
 */
-int main(){
+int main(int argc, char *argv[], char *envp[]){
 
   Job job;
   //Command command;
   int continue_flag = TRUE;
   pid_t pid;
   int exit_status;
+  int i, j = 0;
+  //char * path;
+
 
   //dont fully get but i think its working to clean up zombie children
   struct sigaction sa;
@@ -54,6 +57,12 @@ int main(){
   }
 
 
+
+  path = find_path(envp);
+  
+  //access???  
+
+  
   get_job(&job);
 
   while (continue_flag){
@@ -69,6 +78,93 @@ int main(){
   write(1, exit_prompt, EXIT_LEN);
   return 0;
 }
+
+
+
+
+char * find_path(char *envp[]){
+  int i, j, path_index = 0;
+  char temp[6];
+
+  for (i = 0; envp[i] != NULL; i++){
+    for (j = 0; j < 5; j++){
+      temp[j] = envp[i][j];
+      printf("%s\n", envp[i]);
+    }
+
+    temp[5] = '\0';
+    if(my_strcmp(temp, "PATH=") == 0){
+      path_index = i;
+      break;
+    }
+  }
+  return envp[path_index] + 5;
+}
+
+
+void build_path(char * path, char * command){
+
+  int numTokens = 0;
+  char *token_start = NULL;
+  char *tokens[numTokens];
+  int command_length = my_strlen(command);
+  int k = 0;
+  
+  
+  
+  
+  for (int i = 0; path[i] != '\0'; i++){
+    if (path[i] != ':'){
+      if (token_start == NULL){
+	token_start = &path[i]; //if not white space and token_start is not currently poiting to a token start of a new token
+      }
+    }else {
+      //If we find white space and token_start is pointing to a token, end the token
+      if(token_start != NULL){
+	int token_length = &path[i] - token_start;
+	tokens[numTokens] = (char *)my_malloc(token_length + command_length+ 1);
+	if(tokens[numTokens] == NULL) {
+	  return; //memory allocation failed
+	}
+	for (int j = 0; j < token_length; j++) {
+	  tokens[numTokens][j] = token_start[j]; //copy the token into the allocated memory
+	}
+	tokens[numTokens][token_length] = '/'; //append the end of commadn terminate the token
+	for (int j = 0; j < token_length+command_length; j++){
+	  tokens[numTokens][j+token_length] = command[k];
+	}
+
+	tokens[numTokens][token_length + command_length] = '\0'; //Null terminate the token
+	k = 0;
+	numTokens++;
+	token_start = NULL;
+      }
+    }
+  }
+
+  for (int i = 0; i < numTokens; i++){
+    if (access(tokens[i], X_OK) == 0){
+      my_strcpy(command, tokens[i]);
+      i = numTokens;//break out of for loop
+    }
+  }
+  return;
+}
+
+
+void adjust_job(Job *job){
+  int i;
+
+  for (i = 0; i < job->num_stages; i++){
+    if (strstr(job->pipelines[i].argv[0], "/") == NULL){
+      build_path(path, job->pipelines[i].argv[0]);
+    }
+  }
+
+  return;
+}
+
+
 
 
 void handle_zmbchld(int sig){
@@ -163,6 +259,13 @@ void get_job(Job *job){
       }
     }
   }
+
+
+  //
+  //RAMI, if you want to disable command prompt search, do it right here and comment out adjust_job
+  //
+  adjust_job(job);
+  
   return;
 };
 
@@ -327,8 +430,8 @@ void handle_pipes(Job *job){
 	waitpid(pid, &status, WNOHANG);
       }
       else {
-        //wait for child process to exit if foreground job
-        waitpid(pid, &status, 0);
+	//wait for child process to exit if foreground job
+	waitpid(pid, &status, 0);
       }      
     }
   }
