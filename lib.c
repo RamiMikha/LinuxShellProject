@@ -113,21 +113,3 @@ void free_all() {
     brk(heap_start);
   }
 }
-
-
-
-/*
-Function Name: my_strlen
-Purpose: to determine the length of a given string
-Details:
-       Input: str - the string that is to be measured
-*/
-/*
-int my_strlen(const char *str){
-  int length = 0;
-  while (str[length] != '\0'){
-    length++;
-  }
-  return length;
-}
-*/
