@@ -1,5 +1,23 @@
+/*
+File Name: my_strings.c
+Professor: Marc Schroeder
+Course: COMP 3659
+Project Members: Brendan Wong and Rami Mikha
+*/
+
+
 #include "my_strings.h"
 
+
+/*
+Function Name: tokenize
+Purpose: to split up a string into different sections
+Details:
+       Input: user_input - the variable containing the user provided command line
+              tokens - the array where the tokenized command line is inputted
+
+       Output: returns the amount of tokens that were produced
+*/
 int tokenize(char *user_input, char *tokens[MAX_TOKENS+1]){
   int numTokens = 0;
   char *token_start = NULL; //pointer to the start of the token

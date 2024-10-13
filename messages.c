@@ -1,4 +1,7 @@
 /*
+File Name: messages.c
+Professor: Marc Schroeder
+Course: COMP 3659
 Project Members: Brendan Wong and Rami Mikha
 */
 #include "messages.h"

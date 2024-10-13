@@ -1,4 +1,7 @@
 /*
+File Name: messages.h
+Professor: Marc Schroeder
+Course: COMP 3659
 Project Members: Brendan Wong and Rami Mikha
 */
 

@@ -1,45 +1,12 @@
 /*
+File Name: lib.c
+Professor: Marc Schroeder
+Course: COMP 3659
 Project Members: Brendan Wong and Rami Mikha
 */
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "lib.h"
 
-
-/*
-Function Name: my_strcmp
-Purpose: compares the contents of two strings
-Details: The function returns a value of 0 if the strings are 0, and returns
-         any other integer value if they aren't.
-
-
-      Input: str1 - the first string that is to be compared to of type char *
-             str2 - the second string that is to be compared to of type char *
-      Output: outputs the result of the comparison, where 0 means the strings are the same,
-              and any other value means that the strings are different
-*/
-
-/*
-int my_strcmp(const char *str1, const char *str2){
-  while (*str1 && *str2) {
-    if (*str1 != *str2) {
-      /*If the characters are different return the difference*/
-/*    return *str1 - *str2;
-
-    }
-
-    /*Increment to the next set of characters*/
-/*  str1++;
-    str2++;
-  }
-
-  /*If we reach this point in means there is no difference in the strings or one string is longer than the other so we compare one final time*/
-/*return *str1 - *str2;
-}
-*/
 
 
 /*
@@ -57,23 +24,6 @@ void clear_buffer(char *buffer, int size){
 }
 
 
-
-/*
-Function Name: my_strcpy
-Purpose: to make a copy of the original string
-Details:
-       Input: dest - where the original string is to be copied over to, of type char *
-              src - the original string that is to be copied, of type char *
-*/
-/*
-void my_strcpy(char *dest, char *src){
-  while (*src){
-    *dest++ = *src++;
-  }
-
-  *dest = '\0';
-}
-*/
 
 /*
 Function Name: my_malloc

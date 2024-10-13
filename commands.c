@@ -1,0 +1,313 @@
+
+/*
+File Name: commands.c
+Professor: Marc Schroeder
+Course: COMP 3659
+Project Members: Brendan Wong and Rami Mikha
+*/
+
+#include "commands.h"
+
+
+/*
+  Function Name: handle_zmbchld
+  Purpose: handles the zombie children processes
+  Details:
+*/
+void handle_zmbchld(int sig){
+  int status;
+
+  waitpid(-1,&status, WNOHANG);
+  return;
+}
+
+
+
+/*
+  Function Name: get_command
+  Purpose: retrieves a command from the user
+  Details:
+  Input: command - the variable containing the command structure that is to be populated
+*/
+void get_command(Command *command){
+  char string_buffer[MAX_READ_LEN];
+  free_all(); //clears contents of argv
+
+  write(STDOUT, command_prompt, PROMPT_LEN);
+
+  command->bytes_read = read(0, string_buffer, MAX_READ_LEN);
+  string_buffer[command->bytes_read-1] = '\0';
+  command->numTokens = tokenize(string_buffer, command->argv);
+
+  return;
+};
+
+
+
+
+/*
+  Function Name: get_job
+  Purpose: to initialize the job structure
+  Details: job - the variable containing the job structure that is to be filled
+
+*/
+
+void get_job(Job *job){
+  int i = 0;
+  int j = 0;
+  //reset contents of get_job
+  free_all();
+  job->num_stages = 0;
+  job->outfile_path = NULL;
+  job->infile_path = NULL;
+  job->background = 0;
+
+  for (i = 0; i < MAX_PIPE_LEN; i++){
+    job->pipelines[i].numTokens = 0;
+  }
+
+
+  for (i = 0; i < MAX_PIPE_LEN; i++){
+    for(j = 0; j <  MAX_TOKENS+1; j++){
+      job->pipelines[i].argv[j] = NULL;
+    }
+  }
+
+  get_command(job->original_cmd);
+  job->num_stages++;
+
+  for (i = 0; i < job->original_cmd->numTokens; i++){
+
+    if (my_strcmp(job->original_cmd->argv[i], "|") != 0 && my_strcmp(job->original_cmd->argv[i], "<") != 0 &&
+	my_strcmp(job->original_cmd->argv[i], ">") != 0 && my_strcmp(job->original_cmd->argv[i], "&") != 0){
+
+
+      if (job->pipelines[job->num_stages-1].argv == NULL)
+	job->pipelines[job->num_stages-1].numTokens = 0;
+
+      // puts the token in the corresponding pipeline it should be in
+      job->pipelines[job->num_stages-1].argv[job->pipelines[job->num_stages-1].numTokens] = job->original_cmd->argv[i];
+      job->pipelines[job->num_stages-1].numTokens++;
+    }
+
+    else{
+      if (my_strcmp(job->original_cmd->argv[i], "|") == 0){
+	job->num_stages+=1;
+      }
+      else{
+	if(my_strcmp(job->original_cmd->argv[i], "<") == 0){
+	  job->infile_path = job->original_cmd->argv[i+1];
+	  i++;
+	}
+
+	else if(my_strcmp(job->original_cmd->argv[i], ">") == 0){
+	  job->outfile_path = job->original_cmd->argv[i+1];
+	  i++;
+	}
+
+	else if (my_strcmp(job->original_cmd->argv[i], "&") == 0){
+	  job->background = TRUE;
+	}
+      }
+    }
+  }
+  return;
+}
+
+
+
+
+
+/*
+  Function Name: run_job
+  Purpose: to run job initialized by get_job()
+  Details: job - the variable containing the job structure to be run
+*/
+void run_job(Job *job, char *envp[]){
+
+  pid_t pid;
+  int status;
+  int exit_status;
+  char full_path[MAX_PATH_LEN];
+  char *path = find_path(envp);
+
+  if(job->num_stages == 1) {
+    pid = fork(); //Fork a child proces
+    if (pid == ERROR_CODE){
+      write(STDOUT,strerror(errno),my_strlen(strerror(errno)));
+      write(STDOUT,"\n",2);
+      _exit(exit_status);
+    }
+    else if (pid == IS_CHILD_PROC) {
+      //In child process
+      //Handling input and output redirection
+      handle_input_redirection(job->infile_path);
+      handle_output_redirection(job->outfile_path);
+
+      if((job->pipelines[0].argv[0][0] == '/') || (my_strcmp(job->pipelines[0].argv[0],"") == 0)){
+	if (execve(job->pipelines[0].argv[0], job->pipelines[0].argv, NULL) == ERROR_CODE){
+	  write(STDOUT,strerror(errno),my_strlen(strerror(errno)));
+	  write(STDOUT,"\n",2);
+	  _exit(exit_status);
+	}
+      }
+      else{
+	if (path != NULL && build_path(path, job->pipelines[0].argv[0], full_path)) {
+	  execve(full_path, job->pipelines[0].argv, NULL);
+	} else {
+	  write(STDOUT,invalid_command, INVALID_LEN);
+	  _exit(exit_status);
+	}
+      }
+    }
+    else{
+      //in parent process
+      if (job->background) {
+	waitpid(pid, &status, WNOHANG);
+      }
+      else {
+	//wait for child process to exit if foreground job
+	waitpid(pid, &status, 0);
+      }
+    }
+  }
+  else{
+    handle_pipes(job, envp);
+  }
+  return;
+}
+
+
+/*
+  Function Name: handle_input_redirection
+  Purpose: to handle the input redirection at the start of the job
+  Details: infile_path - path to the input file
+*/
+void handle_input_redirection(const char *infile_path){
+  int exit_status;
+  if (infile_path != NULL){
+    int fd = open(infile_path, O_RDONLY);
+
+    if (fd == -1){
+      write(STDOUT,strerror(errno),my_strlen(strerror(errno)));
+      write(STDOUT,"\n",2);
+      _exit(exit_status);
+    }
+    //redirect STDIN to input file
+    dup2(fd, STDIN);
+    close(fd);
+  }
+}
+
+
+/*
+  Function Name: handle_OUtput_redirection
+  Purpose: to handle the input redirection at the end of the job
+  Details: infile_path - path to the output file
+*/
+void handle_output_redirection(const char *outfile_path) {
+  int exit_status;
+  if(outfile_path != NULL){
+    int fd = open(outfile_path, O_WRONLY | O_CREAT | O_TRUNC);
+
+    if (fd == -1){
+      write(STDOUT,strerror(errno),my_strlen(strerror(errno)));
+      write(STDOUT,"\n",2);
+      _exit(exit_status);
+    }
+
+    //redirect STDOUT to output file
+    dup2(fd, STDOUT);
+    close(fd);
+  }
+}
+
+
+
+/*
+  Function Name: handle_pipes
+  Purpose: to handle execution if job has multiple commands with pipelines
+  Details: job - the variable containing the job struct that is to be executed
+*/
+void handle_pipes(Job *job, char *envp[]){
+  int status;
+  int pipefd[2];
+  int prev_fd = STDIN; //start with the standard input
+  pid_t pid;
+  int exit_status;
+  char full_path[MAX_PATH_LEN];
+  char * path = find_path(envp);
+  for (int i = 0; i < job->num_stages; i++) {
+    if (i < job->num_stages - 1 ){
+      //create a pipe if its not the last command
+      if (pipe(pipefd)== ERROR_CODE){
+	write(STDOUT,strerror(errno),my_strlen(strerror(errno)));
+	write(STDOUT,"\n",2);
+	_exit(exit_status);
+      }
+    }
+
+    pid = fork();
+
+    if (pid == ERROR_CODE){
+      write(STDOUT,strerror(errno),my_strlen(strerror(errno)));
+      write(STDOUT,"\n",2);
+      _exit(exit_status);
+    }
+    else if(pid == IS_CHILD_PROC) {
+      //In child process
+      if (i == 0) {
+	//Handling input redirection for the first command
+	handle_input_redirection(job->infile_path);
+      }else{
+	dup2(prev_fd, STDIN); //redirect STDIN to the previous stage
+	close(prev_fd);
+      }
+
+      if (i == job->num_stages - 1){
+	//handling output redirection for last command
+	handle_output_redirection(job->outfile_path);
+      }
+      else{
+	dup2(pipefd[WRITE], STDOUT);
+      }
+
+      //close both pipe ends
+      close(pipefd[READ]);
+      close(pipefd[WRITE]);
+
+      if((job->pipelines[i].argv[0][0] == '/') || (my_strcmp(job->pipelines[i].argv[0],"") == 0)){
+	if (execve(job->pipelines[i].argv[0], job->pipelines[i].argv, NULL) == -1){
+	  write(STDOUT,strerror(errno),my_strlen(strerror(errno)));
+	  write(STDOUT,"\n",2);
+	  _exit(exit_status);
+	}
+      }
+      else{
+	if (path != NULL && build_path(path, job->pipelines[i].argv[0], full_path)) {
+	  execve(full_path, job->pipelines[i].argv, NULL);
+	} else{
+	  write(STDOUT,invalid_command, INVALID_LEN);
+	  _exit(exit_status);
+	}
+      }
+
+    }
+    else{
+      //in parent process
+      if (prev_fd != STDIN) {
+	close(prev_fd);
+      }
+      prev_fd = pipefd[READ]; //save the read enf of the pipe for the next command
+      close(pipefd[WRITE]); //close the write end in parent process
+      if (job->background) {
+	waitpid(pid, &status, WNOHANG);
+      }
+      else {
+	//wait for child process to exit if foreground job
+	waitpid(pid, &status, 0);
+      }
+    }
+  }
+  return;
+}

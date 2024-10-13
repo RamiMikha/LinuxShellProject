@@ -1,4 +1,7 @@
 /*
+File Name: lib.h
+Professor: Marc Schroeder
+Course: COMP 3659
 Project Members: Brendan Wong and Rami Mikha
 */
 
@@ -9,7 +12,6 @@ Project Members: Brendan Wong and Rami Mikha
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "lib.h"
 
 
 static void *heap_start = NULL; //Pointer to track the initial program break
