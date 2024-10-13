@@ -18,16 +18,6 @@
 #include <stdlib.h>
 
 /*
-  background processes seems to be working but for some reason the command prompt does not get written after a background job
-  
-  
-*/
-
-char * path;
-char * find_path(char *envp[]);
-void build_path(char *path, char *command);
-void adjust_job(Job *job);
-/*
   Function Name: main
   Purpose: governs the running of the shell (mysh)
   Details: the function calls helper functions and makes system calls that process
@@ -41,10 +31,8 @@ int main(int argc, char *argv[], char *envp[]){
   pid_t pid;
   int exit_status;
   int i, j = 0;
-  //char * path;
 
 
-  //dont fully get but i think its working to clean up zombie children
   struct sigaction sa;
   sa.sa_handler = &handle_zmbchld; //Set the signal handler function
   sigemptyset(&sa.sa_mask); //stops other handle_zmbchld calls from happening during it is being handles
@@ -55,13 +43,6 @@ int main(int argc, char *argv[], char *envp[]){
     write(1,"\n",2);
     _exit(exit_status);
   }
-
-
-
-  path = find_path(envp);
-  
-  //access???  
-
   
   get_job(&job);
 
@@ -71,7 +52,7 @@ int main(int argc, char *argv[], char *envp[]){
     }
 
     else{
-      run_job(&job);
+      run_job(&job, envp);
       get_job(&job);
     }
   }  
@@ -89,7 +70,7 @@ char * find_path(char *envp[]){
   for (i = 0; envp[i] != NULL; i++){
     for (j = 0; j < 5; j++){
       temp[j] = envp[i][j];
-      printf("%s\n", envp[i]);
+      //printf("%s\n", envp[i]);
     }
 
     temp[5] = '\0';
@@ -102,9 +83,9 @@ char * find_path(char *envp[]){
 }
 
 
-void build_path(char * path, char * command){
+int build_path(char * path, char * command, char *full_path){
 
-  int numTokens = 0;
+  /* int numTokens = 0;
   char *token_start = NULL;
   char *tokens[numTokens];
   int command_length = my_strlen(command);
@@ -148,10 +129,44 @@ void build_path(char * path, char * command){
       i = numTokens;//break out of for loop
     }
   }
-  return;
+  return;*/
+
+  int path_len = my_strlen(path);
+  int cmd_len = my_strlen(command);
+  int dir_start = 0;
+  int dir_len;
+  struct stat buf;
+  char dir[MAX_DIR_LEN];
+
+  //iterate through PATH and tokenize with ':'
+  for(int i = 0; i <= path_len; i++){
+    //check for : or end of string
+    if(path[i] == ':' || path[i] == '\0'){
+      dir_len = i - dir_start;
+      //copy directory from path to dir buffer
+      if (dir_len > 0 && dir_len < MAX_DIR_LEN){
+	my_strcpy(dir, &path[dir_start]);
+	dir[dir_len] = '\0';
+
+	//make the full path
+	my_strcpy(full_path, dir);
+	full_path[dir_len] = '/';
+	my_strcpy(&full_path[dir_len + 1], command);
+	full_path[dir_len + 1 + cmd_len] = '\0';
+
+	//using stat system call to check if the command exists and if it can be executed
+	if (stat(full_path, &buf) == 0 && (buf.st_mode & S_IXUSR)){
+	  return 1; //return if we find the command
+	} 
+      }
+      //if not found, move on to next directory
+      dir_start = i + 1;
+    }
+  }
+  return 0; //did not find command
 }
 
-
+/*not using
 void adjust_job(Job *job){
   int i;
 
@@ -162,9 +177,9 @@ void adjust_job(Job *job){
   }
 
   return;
+ 
 }
-
-
+*/
 
 
 void handle_zmbchld(int sig){
@@ -264,7 +279,7 @@ void get_job(Job *job){
   //
   //RAMI, if you want to disable command prompt search, do it right here and comment out adjust_job
   //
-  adjust_job(job);
+  // adjust_job(job);
   
   return;
 };
@@ -275,13 +290,14 @@ void get_job(Job *job){
   Purpose: to run job initialized by get_job()
   Details: job - the variable containing the job structure to be run
 */
-void run_job(Job *job){
+void run_job(Job *job, char *envp[]){
 
   pid_t pid;
   int status;
   int exit_status;
+  char full_path[MAX_PATH_LEN];
+  char *path = find_path(envp);
   if(job->num_stages == 1) {
-
     pid = fork(); //Fork a child proces
     if (pid == -1){
       write(1,strerror(errno),my_strlen(strerror(errno)));
@@ -294,11 +310,21 @@ void run_job(Job *job){
       //Handling input and output redirection
       handle_input_redirection(job->infile_path);
       handle_output_redirection(job->outfile_path);
-      
-      if (execve(job->pipelines[0].argv[0], job->pipelines[0].argv, NULL)== -1){
-	write(1,strerror(errno),my_strlen(strerror(errno)));
-	write(1,"\n",2);
-	_exit(exit_status);
+
+      if((job->pipelines[0].argv[0][0] == '/') || (my_strcmp(job->pipelines[0].argv[0],"") == 0)){
+	if (execve(job->pipelines[0].argv[0], job->pipelines[0].argv, NULL) == -1){
+	   write(1,strerror(errno),my_strlen(strerror(errno)));
+	   write(1,"\n",2);
+	   _exit(exit_status);
+	 }
+      }
+      else{
+	if (path != NULL && build_path(path, job->pipelines[0].argv[0], full_path)) {
+	  execve(full_path, job->pipelines[0].argv, NULL);
+	} else {
+	  write(1,invalid_command, INVALID_LEN);
+	  _exit(exit_status);
+	}
       }
     }
     else{
@@ -313,10 +339,10 @@ void run_job(Job *job){
     }
   }
   else{
-    handle_pipes(job);
+    handle_pipes(job, envp);
   }
   return;
-};
+}
 
 /*
   Function Name: handle_input_redirection
@@ -368,12 +394,15 @@ void handle_output_redirection(const char *outfile_path) {
   Purpose: to handle execution if job has multiple commands with pipelines 
   Details: job - the variable containing the job struct that is to be executed
 */
-void handle_pipes(Job *job){
+void handle_pipes(Job *job, char *envp[]){
   int status;
   int pipefd[2];
   int prev_fd = STDIN; //start with the standard input
   pid_t pid;
   int exit_status;
+  char full_path[MAX_PATH_LEN];
+  char * path = find_path(envp);
+  printf("handle_pipe\n");
   for (int i = 0; i < job->num_stages; i++) {
     if (i < job->num_stages - 1 ){
       //create a pipe if its not the last command
@@ -413,11 +442,22 @@ void handle_pipes(Job *job){
       close(pipefd[READ]);
       close(pipefd[WRITE]);
 
-      if (execve(job->pipelines[i].argv[0], job->pipelines[i].argv, NULL) == 1){
-	write(1,strerror(errno),my_strlen(strerror(errno)));
-	write(1,"\n",2);
-	_exit(exit_status);
+      if((job->pipelines[i].argv[0][0] == '/') || (my_strcmp(job->pipelines[i].argv[0],"") == 0)){
+	 if (execve(job->pipelines[i].argv[0], job->pipelines[i].argv, NULL) == -1){
+           write(1,strerror(errno),my_strlen(strerror(errno)));
+           write(1,"\n",2);
+           _exit(exit_status);
+         }
       }
+      else{
+        if (path != NULL && build_path(path, job->pipelines[i].argv[0], full_path)) {
+          execve(full_path, job->pipelines[i].argv, NULL);
+        } else {
+          write(1,invalid_command, INVALID_LEN);
+          _exit(exit_status);
+        }
+      }
+
     }
     else{
       //in parent process
